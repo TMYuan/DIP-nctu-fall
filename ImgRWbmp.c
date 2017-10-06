@@ -2,7 +2,7 @@
 /*  Digital Image Processing (2017)                                        */
 /*  Homework 1                                                             */
 /*  Author: Min Yuan Tseng                                                 */
-/*  Student: 0310139                                                       */
+/*  Student ID: 0310139                                                    */
 /*                                                                         */
 /*  There are three tasks to finish:                                       */
 /*  1. Image Input/Output                                                  */
@@ -41,7 +41,7 @@ int readbmp(unsigned char* filename, bmpheader* hbmp, int mode, unsigned char* p
     char c[128];
     unsigned char* ptr;
 
-    sprintf(c, "./data/%s.bmp", filename);
+    sprintf(c, "./data/%s", filename);
     ifp = fopen(c, "rb");
     if(ifp==NULL){
         printf("readbmp: file open error\n");
@@ -72,7 +72,7 @@ int writebmp(unsigned char* filename, bmpheader* hbmp, unsigned char* palette, u
     char c[128];
     unsigned char* ptr;
 
-    sprintf(c, "./data/%s.bmp", filename);
+    sprintf(c, "./data/%s", filename);
     ofp = fopen(c, "wb");
     if(ofp==NULL){
         printf("writebmp: file open error\n");
@@ -90,15 +90,17 @@ int writebmp(unsigned char* filename, bmpheader* hbmp, unsigned char* palette, u
 
 
 int main(int argc, char* argv[]){
-    unsigned char* bmpimage, palette;
+    unsigned char* bmpimage, *palette;
     bmpheader hbmp;
-    int size;
-    readbmp("input2", &hbmp, 0, palette, bmpimage);
+    char* input_name, *output_name;
+    input_name = argv[1];
+    output_name = argv[2];
+
+    readbmp(input_name, &hbmp, 0, palette, bmpimage);
     bmpimage = malloc(sizeof(unsigned char)*hbmp.bitmap_datasize);
     palette = malloc(sizeof(unsigned char)*hbmp.usedcolors*4);
-    readbmp("input2", &hbmp, 1, palette, bmpimage);
-    // printf("%d", size);
-    writebmp("output2", &hbmp, palette, bmpimage);
+    readbmp(input_name, &hbmp, 1, palette, bmpimage);
+    writebmp(output_name, &hbmp, palette, bmpimage);
 
     return 0;
 }
