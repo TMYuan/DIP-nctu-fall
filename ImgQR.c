@@ -57,14 +57,11 @@ int readbmp(unsigned char* filename, bmpheader* hbmp, int mode, unsigned char* p
     fread(ptr, sizeof(unsigned char), sizeof(bmpheader), ifp);
 
     if(mode==1){
-        fread(palette, sizeof(unsigned char), hbmp->usedcolors*4, ifp);
+        fread(palette, sizeof(unsigned char), hbmp->bitmap_dataoffset - sizeof(bmpheader), ifp);
         fread(buffer, sizeof(unsigned char), hbmp->bitmap_datasize, ifp);
     }
     else{
-        fclose(ifp);    
-        printf("offset: %u\n", hbmp->bitmap_dataoffset);
-        printf("width: %u, height: %u\n", hbmp->width, hbmp->height);
-        printf("Data Size: %u\n", hbmp->bitmap_datasize);
+        fclose(ifp);
         return 1;
     }
 
@@ -86,7 +83,7 @@ int writebmp(unsigned char* filename, bmpheader* hbmp, unsigned char* palette, u
 
     ptr = (unsigned char *)hbmp;
     fwrite(ptr, sizeof(unsigned char), sizeof(bmpheader), ofp);
-    fwrite(palette, sizeof(unsigned char), hbmp->usedcolors*4, ofp);
+    fwrite(palette, sizeof(unsigned char), hbmp->bitmap_dataoffset - sizeof(bmpheader), ofp);
     fwrite(buffer, sizeof(unsigned char), hbmp->bitmap_datasize, ofp);
 
     fclose(ofp);
@@ -112,9 +109,9 @@ int main(int argc, char* argv[]){
 
     readbmp(input_name, &hbmp, 0, palette, bmpimage);
     bmpimage = malloc(sizeof(unsigned char)*hbmp.bitmap_datasize);
-    palette = malloc(sizeof(unsigned char)*hbmp.usedcolors*4);
+    palette = malloc(sizeof(unsigned char)*(hbmp.bitmap_dataoffset - sizeof(bmpheader)));
     readbmp(input_name, &hbmp, 1, palette, bmpimage);
-    resolution(bmpimage, 2, hbmp.bitmap_datasize);
+    resolution(bmpimage, 4, hbmp.bitmap_datasize);
     writebmp(output_name_1, &hbmp, palette, bmpimage);
 
     return 0;
