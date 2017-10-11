@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <math.h>
 
-#define SCALING_RATE 1.5
+#define SCALING_RATE 0.67
 
 typedef struct _bmpheader{
     unsigned short identifier;      // 0x0000
@@ -127,7 +127,7 @@ void scale_up(bmpheader hbmp, unsigned char* buffer, unsigned char* image_up){
     height = hbmp.height;
     width = hbmp.width;
     height_up = height * SCALING_RATE;
-    width_up = width * SCALING_RATE;
+    width_up = ((width * SCALING_RATE)/4)*4;
     size_up = height_up * width_up * color_num;
 
     for(i=0; i<size_up; i++){
@@ -162,7 +162,8 @@ int main(int argc, char* argv[]){
     readbmp(input_name, &hbmp, 1, palette, bmpimage);
     headerinfo(&hbmp);
 
-    bmpimage_up = malloc(sizeof(unsigned char)*hbmp.width*hbmp.height*(hbmp.bits_perpixel/8)*SCALING_RATE*SCALING_RATE);
+    bmpimage_up = malloc(sizeof(unsigned char)*\
+        ((hbmp.width*SCALING_RATE)/4)*4*hbmp.height*(hbmp.bits_perpixel/8)*SCALING_RATE);
     // bmpimage_down = malloc(sizeof(unsigned char)*hbmp.bitmap_datasize/SCALING_RATE);
 
     scale_up(hbmp, bmpimage, bmpimage_up);
