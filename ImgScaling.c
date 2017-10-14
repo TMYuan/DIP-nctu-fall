@@ -13,13 +13,13 @@
 /*  http://capricorn-liver.blogspot.tw/2010/11/cbmp.html                   */
 /*                                                                         */
 /*  In this file, there are some same function and operation in            */
-/*  "ImgRWbmp.c", so I would not add comment in this file for them         */
+/*  "ImgRWbmp.c", so I would not add comment in this file for them.        */
 /***************************************************************************/
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 
-#define SCALING_RATE 1.5
+// #define SCALING_RATE 1.5
 
 typedef struct _bmpheader{
     unsigned short identifier;      // 0x0000
@@ -105,10 +105,15 @@ void headerinfo(bmpheader *hbmp){
     printf("importantcolors:     %u\n", hbmp->importantcolors);
 }
 
+// This function is to return the index of 1D array
+// by given x, y, width, pixel_color and color_num 
 unsigned int getindex(double x, double y, unsigned int width, unsigned int pixel_color, unsigned int color_num){
     return color_num*(x + y * width)+pixel_color;
 }
 
+// This function is to operate bilinear interpolation by given four points,
+// it will insert value in (x, y) point.
+// It call getindex() to get real index in bitmap array
 unsigned int interpolation(double x, double y, double x_small, double x_large, double y_small, \
                         double y_large, unsigned char* buffer, unsigned int height, unsigned int width, \
                         unsigned int pixel_color, unsigned color_num){
@@ -122,15 +127,25 @@ unsigned int interpolation(double x, double y, double x_small, double x_large, d
     f3 = f1 + (y - y_small) * (f2 - f1);
 }
 
-void scale_up(bmpheader hbmp, unsigned char* buffer, unsigned char* image_up){
+// This function is to scaling up/down a BMP file.
+void scale_up(bmpheader hbmp, unsigned char* buffer, unsigned char* image_up, bmpheader* hbmp_up, double rate){
     unsigned int color_num, i=0, size_up, height, width, height_up, width_up;
+    
+    // In this part, I calculate some information for new bmpheader,
+    // and change the value in new bmpheader
     color_num = hbmp.bits_perpixel/8;
     height = hbmp.height;
     width = hbmp.width;
-    height_up = height * SCALING_RATE;
-    width_up = ((width * SCALING_RATE)/4)*4;
+    height_up = height * rate;
+    width_up = ((width * rate)/4)*4;
     size_up = height_up * width_up * color_num;
+    hbmp_up->height = height_up;
+    hbmp_up->width = width_up;
+    hbmp_up->bitmap_datasize = height_up * width_up * color_num;
+    hbmp_up->filesize = hbmp_up->bitmap_datasize + hbmp_up->bitmap_dataoffset;
 
+    // In this part, I iterate all element in new bitmap array,
+    // insert the value by bilinear interpolation(call interpolation())
     for(i=0; i<size_up; i++){
         unsigned int pixel, pixel_height, pixel_width, pixel_color;
         double pixel_height_ori, pixel_width_ori, x_small, x_large, y_small, y_large;
@@ -138,8 +153,8 @@ void scale_up(bmpheader hbmp, unsigned char* buffer, unsigned char* image_up){
         pixel_color = i % color_num;
         pixel_height = pixel / width_up;
         pixel_width = pixel % width_up;
-        pixel_height_ori = pixel_height / SCALING_RATE;
-        pixel_width_ori = pixel_width / SCALING_RATE;
+        pixel_height_ori = pixel_height / rate;
+        pixel_width_ori = pixel_width / rate;
         x_small = floor(pixel_width_ori);
         x_large = ceil(pixel_width_ori);
         y_small = floor(pixel_height_ori);
@@ -152,10 +167,15 @@ void scale_up(bmpheader hbmp, unsigned char* buffer, unsigned char* image_up){
 
 int main(int argc, char* argv[]){
     unsigned char *bmpimage, *palette, *bmpimage_up, *bmpimage_down;
-    bmpheader hbmp, hbmp_up;
-    char* input_name, *output_name;
+    bmpheader hbmp, hbmp_up, hbmp_down;
+    char* input_name, *output_name_up, *output_name_down;
+    double up_rate, down_rate;
     input_name = argv[1];
-    output_name = argv[2];
+    output_name_up = argv[2];
+    output_name_down = argv[3];
+
+    up_rate = 1.5;
+    down_rate = 0.67;
 
     readbmp(input_name, &hbmp, 0, palette, bmpimage);
     bmpimage = malloc(sizeof(unsigned char)*hbmp.width*hbmp.height*(hbmp.bits_perpixel/8));
@@ -163,19 +183,22 @@ int main(int argc, char* argv[]){
     readbmp(input_name, &hbmp, 1, palette, bmpimage);
     headerinfo(&hbmp);
 
+    // Allocate memory for up/down scale bitmap array
     bmpimage_up = malloc(sizeof(unsigned char)*\
-        ((hbmp.width*SCALING_RATE)/4)*4*hbmp.height*(hbmp.bits_perpixel/8)*SCALING_RATE);
-    // bmpimage_down = malloc(sizeof(unsigned char)*hbmp.bitmap_datasize/SCALING_RATE);
+        ((hbmp.width*up_rate)/4)*4*hbmp.height*(hbmp.bits_perpixel/8)*up_rate);
+    bmpimage_down = malloc(sizeof(unsigned char)*\
+        ((hbmp.width*down_rate)/4)*4*hbmp.height*(hbmp.bits_perpixel/8)*down_rate);
 
-    scale_up(hbmp, bmpimage, bmpimage_up);
+    // Copy original header
     hbmp_up = hbmp;
-    hbmp_up.height *= SCALING_RATE;
-    hbmp_up.width *= SCALING_RATE;
-    hbmp_up.bitmap_datasize = hbmp_up.height * hbmp_up.width * (hbmp.bits_perpixel/8);
-    hbmp_up.filesize = hbmp_up.bitmap_datasize + hbmp.bitmap_dataoffset;
-    headerinfo(&hbmp_up);
+    hbmp_down = hbmp;
 
-    writebmp(output_name, &hbmp_up, palette, bmpimage_up);
+    // Perform scale up/down with rate 1.5
+    scale_up(hbmp, bmpimage, bmpimage_up, &hbmp_up, up_rate);
+    scale_up(hbmp, bmpimage, bmpimage_down, &hbmp_down, down_rate);
+
+    writebmp(output_name_up, &hbmp_up, palette, bmpimage_up);
+    writebmp(output_name_down, &hbmp_down, palette, bmpimage_down);
 
     return 0;
 }
