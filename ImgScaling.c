@@ -12,13 +12,14 @@
 /*  For this homework, I modify some code for BMP reader/writer from:      */
 /*  http://capricorn-liver.blogspot.tw/2010/11/cbmp.html                   */
 /*                                                                         */
-/*                                                                         */
+/*  In this file, there are some same function and operation in            */
+/*  "ImgRWbmp.c", so I would not add comment in this file for them         */
 /***************************************************************************/
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 
-#define SCALING_RATE 0.67
+#define SCALING_RATE 1.5
 
 typedef struct _bmpheader{
     unsigned short identifier;      // 0x0000

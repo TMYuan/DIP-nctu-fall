@@ -111,7 +111,7 @@ int main(int argc, char* argv[]){
     bmpimage = malloc(sizeof(unsigned char)*hbmp.bitmap_datasize);
     palette = malloc(sizeof(unsigned char)*(hbmp.bitmap_dataoffset - sizeof(bmpheader)));
     readbmp(input_name, &hbmp, 1, palette, bmpimage);
-    resolution(bmpimage, 2, hbmp.bitmap_datasize);
+    resolution(bmpimage, 6, hbmp.bitmap_datasize);
     writebmp(output_name_1, &hbmp, palette, bmpimage);
 
     return 0;

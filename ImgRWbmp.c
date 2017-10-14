@@ -17,6 +17,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+// Definition of bmp header
+// The header of BMP file will be read into this stucture,
+// because I need this struct in continuous memory address.
+// I use attribute "pack" to accomplish it
 typedef struct _bmpheader{
     unsigned short identifier;      // 0x0000
     unsigned int filesize;          // 0x0002
@@ -35,7 +39,16 @@ typedef struct _bmpheader{
     unsigned int importantcolors;   // 0x0032
 } __attribute__((packed,aligned(1))) bmpheader;
 
-
+// This function is to read BMP header and data.
+// It takes five variable:
+// 1. filename: the input file name
+// 2. hbmp: pointer for storing bitmap header
+// 3. mode: choose the mode of function
+// 4. palette: palette storage
+// 5. buffer: bitmap array storage
+// There are two modes in this function.
+// mode 0: just read BMP header for main function to allocate memory to "palette" and "bitmap array".
+// mode 1: Read BMP header, palette and bitmap array.
 int readbmp(unsigned char* filename, bmpheader* hbmp, int mode, unsigned char* palette, unsigned char* buffer){
     FILE* ifp;
     char c[128];
@@ -64,6 +77,9 @@ int readbmp(unsigned char* filename, bmpheader* hbmp, int mode, unsigned char* p
     return 1;
 }
 
+// This function is to write a BMP file
+// It takes 5 variable, it is almost like "readbmp",
+// but "filename" is output file name.
 int writebmp(unsigned char* filename, bmpheader* hbmp, unsigned char* palette, unsigned char* buffer){
     FILE* ofp;
     char c[128];
@@ -85,6 +101,7 @@ int writebmp(unsigned char* filename, bmpheader* hbmp, unsigned char* palette, u
     return 1;
 }
 
+// This function is to print information in BMP header
 void headerinfo(bmpheader *hbmp){
     printf("identifier:          %hu\n", hbmp->identifier);
     printf("filesize:            %u\n", hbmp->filesize);
@@ -103,6 +120,13 @@ void headerinfo(bmpheader *hbmp){
 }
 
 
+// In main function,
+// First I declare variable, assign input_name and output_name
+// Then, call readbmp with mode 0 to get BMP header.
+// Allocating memory for "palette" and "bmpimage"
+// Call readbmp with mode 1 to get all BMP file.
+// Print information of BMP header to stdout.
+// Finally, call writebmp to write the output file.
 int main(int argc, char* argv[]){
     unsigned char* bmpimage, *palette;
     bmpheader hbmp;
