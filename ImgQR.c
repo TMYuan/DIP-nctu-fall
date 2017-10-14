@@ -12,7 +12,8 @@
 /*  For this homework, I modify some code for BMP reader/writer from:      */
 /*  http://capricorn-liver.blogspot.tw/2010/11/cbmp.html                   */
 /*                                                                         */
-/*                                                                         */
+/*  In this file, there are some same function and operation in            */
+/*  "ImgRWbmp.c", so I would not add comment in this file for them.        */
 /***************************************************************************/
 #include <stdlib.h>
 #include <stdio.h>
@@ -90,29 +91,47 @@ int writebmp(unsigned char* filename, bmpheader* hbmp, unsigned char* palette, u
     return 1;
 }
 
-void resolution(unsigned char *buffer, unsigned char level, unsigned int buffer_size){
+// This function is to perform resolution.
+// The level depend on variable "bit", for bit=1, level=2,
+// bit=3, level=8, bit=6, level=64 ...
+// It calculate step_size first, then use it to operate resolution.
+void resolution(unsigned char *buffer, unsigned char bit, unsigned int buffer_size, unsigned char *bmpimage_re){
     unsigned int i=0;
     double step_size;
-    step_size = 255/(pow(2, level)-1);
+    step_size = 255/(pow(2, bit)-1);
     for(i=0; i<buffer_size; i++){
-        buffer[i] = round(buffer[i]/step_size) * step_size;
+        bmpimage_re[i] = round(buffer[i]/step_size) * step_size;
     }
 }
 
 
 int main(int argc, char* argv[]){
-    unsigned char *bmpimage, *palette;
+    unsigned char *bmpimage, *palette, *bmpimage_re;
     bmpheader hbmp;
     char* input_name, *output_name_1, *output_name_2, *output_name_3;
     input_name = argv[1];
     output_name_1 = argv[2];
+    output_name_2 = argv[3];
+    output_name_3 = argv[4];
 
+    // Use "bmpimage_re" to store bmp array after resolution
     readbmp(input_name, &hbmp, 0, palette, bmpimage);
     bmpimage = malloc(sizeof(unsigned char)*hbmp.bitmap_datasize);
+    bmpimage_re = malloc(sizeof(unsigned char)*hbmp.bitmap_datasize);
     palette = malloc(sizeof(unsigned char)*(hbmp.bitmap_dataoffset - sizeof(bmpheader)));
     readbmp(input_name, &hbmp, 1, palette, bmpimage);
-    resolution(bmpimage, 6, hbmp.bitmap_datasize);
-    writebmp(output_name_1, &hbmp, palette, bmpimage);
+
+    // 2 level(1 bit) resolution
+    resolution(bmpimage, 1, hbmp.bitmap_datasize, bmpimage_re);
+    writebmp(output_name_1, &hbmp, palette, bmpimage_re);
+
+    // 8 level(3 bit) resolution
+    resolution(bmpimage, 3, hbmp.bitmap_datasize, bmpimage_re);
+    writebmp(output_name_2, &hbmp, palette, bmpimage_re);
+
+    // 64 level(6 bit) resolution
+    resolution(bmpimage, 6, hbmp.bitmap_datasize, bmpimage_re);
+    writebmp(output_name_3, &hbmp, palette, bmpimage_re);
 
     return 0;
 }
